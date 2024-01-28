@@ -1,0 +1,116 @@
+@idphost=https://localhost:5001
+@host=http://localhost:5000
+
+###
+# @name auth
+POST {{idphost}}/connect/token HTTP/1.1
+content-type: application/x-www-form-urlencoded
+
+grant_type=password
+&client_id=coolstore.password
+&client_secret=49C1A7E1-0C79-4A89-A3D6-A37998FB86B0
+&username=bob
+&password=bob
+
+###
+@page = 1
+@price = 10000
+GET {{host}}/prod/api/products/{{page}}/{{price}} HTTP/1.1
+content-type: application/json
+# authorization: bearer {{auth.response.body.access_token}}
+
+###
+@search_query = *
+@search_price = 3000
+@search_page = 1
+@search_pageSize = 20
+GET {{host}}/prod/api/product-search/{{search_query}}/{{search_price}}/{{search_page}}/{{search_pageSize}} HTTP/1.1
+content-type: application/json
+# authorization: bearer {{auth.response.body.access_token}}
+
+###
+@id = fee1fc67-7469-4490-b418-47f4732de53f
+GET {{host}}/prod/api/products/fee1fc67-7469-4490-b418-47f4732de53f HTTP/1.1
+content-type: application/json
+# authorization: bearer {{auth.response.body.access_token}}
+
+###
+POST {{host}}/prod/api/products HTTP/1.1
+content-type: application/json
+# authorization: bearer {{auth.response.body.access_token}}
+
+{
+	"name": "sample product",
+	"desc": "This is sample project",
+	"price": "100",
+	"imageUrl": "http://samplepicture.img"
+}
+
+###
+@id = 05233341-185a-468a-b074-00ebd08559aa
+PUT {{host}}/prod/api/products/{{id}} HTTP/1.1
+content-type: application/json
+# authorization: bearer {{auth.response.body.access_token}}
+
+{
+	"name": "sample product",
+	"desc": "This is sample project",
+	"price": "1200",
+	"imageUrl": "http://samplepicture.img"
+}
+
+###
+@id = 05233341-185a-468a-b074-00ebd08559aa
+DELETE {{host}}/prod/api/products/{{id}} HTTP/1.1
+content-type: application/json
+# authorization: bearer {{auth.response.body.access_token}}
+
+###
+GET {{host}}/inv/api/inventories HTTP/1.1
+content-type: application/json
+# authorization: bearer {{auth.response.body.access_token}}
+
+###
+@id = 90c9479e-a11c-4d6d-aaaa-0405b6c0efcd
+GET {{host}}/inv/api/inventories/{{id}} HTTP/1.1
+content-type: application/json
+# authorization: bearer {{auth.response.body.access_token}}
+
+###
+@id = a7791191-ff4a-4938-a4ed-b9074e59a18b
+GET {{host}}/api-gw/shopping-cart/api/carts/{{id}} HTTP/1.1
+content-type: application/json
+# authorization: bearer {{auth.response.body.access_token}}
+
+###
+POST {{host}}/cart/api/carts HTTP/1.1
+content-type: application/json
+# authorization: bearer {{auth.response.body.access_token}}
+
+{
+	"productId": "05233341-185a-468a-b074-00ebd08559aa",
+	"quantity": 1
+}
+
+###
+@id = 68994e16-fe26-4ff5-bc1d-9536be02b9bf
+PUT {{host}}/cart/api/carts/{{id}} HTTP/1.1
+content-type: application/json
+# authorization: bearer {{auth.response.body.access_token}}
+
+{
+	"productId": "a162b9ee-85b4-457a-93fc-015df74201dd",
+	"quantity": 20
+}
+
+###
+@id = EE8359B9-FDD4-43ED-B385-7003E22F4222
+PUT {{host}}/cart/api/carts/{{id}}/checkout HTTP/1.1
+content-type: application/json
+# authorization: bearer {{auth.response.body.access_token}}
+
+###
+@id = EE8359B9-FDD4-43ED-B385-7003E22F4222
+DELETE {{host}}/cart/api/carts/{{id}}  HTTP/1.1
+content-type: application/json
+# authorization: bearer {{auth.response.body.access_token}}

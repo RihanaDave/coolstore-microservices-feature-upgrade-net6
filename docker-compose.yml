@@ -1,0 +1,221 @@
+# docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
+
+version: "3"
+
+services:
+
+  ############################
+  # WebApp
+  ############################
+  webapp:
+    image: ghcr.io/vietnam-devs/coolstore-microservices/webapp-v6:0.1.0
+    depends_on:
+      - webapigatewayapp
+    networks:
+      - coolstore-network
+
+  #######################################
+  # webapigateway app + Dapr sidecar
+  #######################################
+  webapigatewayapp:
+    image: ghcr.io/vietnam-devs/coolstore-microservices/webapigatewayapp-v6:0.1.0
+    build:
+      context: .
+      dockerfile: src/dotnet/api-gateway/Dockerfile
+    depends_on:
+      - placement
+      - identityapp
+      - inventoryapp
+      - productcatalogapp
+      - shoppingcartapp
+    networks:
+      - coolstore-network
+
+  webapigatewayapp-dapr:
+    image: "daprio/daprd:edge"
+    command: ["./daprd",
+     "-app-id", "webapigatewayapp",
+     "-app-port", "5000",
+     "-placement-host-address", "placement:50006",
+     "-components-path", "/components", "-app-ssl"]
+    volumes:
+      - "./components/:/components"
+    depends_on:
+      - webapigatewayapp
+    network_mode: "service:webapigatewayapp"
+
+  #######################################
+  # identity app + Dapr sidecar
+  #######################################
+  identityapp:
+    image: ghcr.io/vietnam-devs/coolstore-microservices/identityapp-v6:0.1.0
+    depends_on:
+      - placement
+      - postgresql
+    networks:
+      - coolstore-network
+
+  identityapp-dapr:
+    image: "daprio/daprd:edge"
+    command: ["./daprd",
+     "-app-id", "identityapp",
+     "-app-port", "5001",
+     "-placement-host-address", "placement:50006",
+     "-components-path", "/components", "-app-ssl"]
+    volumes:
+      - "./components/:/components"
+    depends_on:
+      - identityapp
+    network_mode: "service:identityapp"
+
+  #######################################
+  # inventory app + Dapr sidecar
+  #######################################
+  inventoryapp:
+    image: ghcr.io/vietnam-devs/coolstore-microservices/inventoryapp-v6:0.1.0
+    depends_on:
+      - placement
+      - postgresql
+      - identityapp
+    networks:
+      - coolstore-network
+
+  inventoryapp-dapr:
+    image: "daprio/daprd:edge"
+    command: ["./daprd",
+     "-app-id", "inventoryapp",
+     "-app-port", "5002",
+     "-placement-host-address", "placement:50006",
+     "-components-path", "/components"]
+    volumes:
+      - "./components/:/components"
+    depends_on:
+      - inventoryapp
+    network_mode: "service:inventoryapp"
+
+  #################################################
+  # productcatalog app + Dapr sidecar
+  #################################################
+  productcatalogapp:
+    image: ghcr.io/vietnam-devs/coolstore-microservices/productcatalogapp-v6:0.1.0
+    depends_on:
+      - placement
+      - postgresql
+      - identityapp
+    networks:
+      - coolstore-network
+
+  productcatalogapp-dapr:
+    image: "daprio/daprd:edge"
+    command: ["./daprd",
+     "-app-id", "productcatalogapp",
+     "-app-port", "5003",
+     "-placement-host-address", "placement:50006",
+     "-components-path", "/components"]
+    volumes:
+      - "./components/:/components"
+    depends_on:
+      - productcatalogapp
+    network_mode: "service:productcatalogapp"
+
+  #################################################
+  # shoppingcart app + Dapr sidecar
+  #################################################
+  shoppingcartapp:
+    image: ghcr.io/vietnam-devs/coolstore-microservices/shoppingcartapp-v6:0.1.0
+    depends_on:
+      - placement
+      - postgresql
+      - identityapp
+    networks:
+      - coolstore-network
+
+  shoppingcartapp-dapr:
+    image: "daprio/daprd:edge"
+    command: ["./daprd",
+     "-app-id", "shoppingcartapp",
+     "-app-port", "5004",
+     "-placement-host-address", "placement:50006",
+     "-components-path", "/components"]
+    volumes:
+      - "./components/:/components"
+    depends_on:
+      - shoppingcartapp
+    network_mode: "service:shoppingcartapp"
+
+  #################################################
+  # sale app + Dapr sidecar
+  #################################################
+  saleapp:
+    image: ghcr.io/vietnam-devs/coolstore-microservices/saleapp-v6:0.1.0
+    depends_on:
+      - placement
+      - postgresql
+      - identityapp
+    networks:
+      - coolstore-network
+
+  saleapp-dapr:
+    image: "daprio/daprd:edge"
+    command: ["./daprd",
+     "-app-id", "saleapp",
+     "-app-port", "5005",
+     "-placement-host-address", "placement:50006",
+     "-components-path", "/components"]
+    volumes:
+      - "./components/:/components"
+    depends_on:
+      - saleapp
+    network_mode: "service:saleapp"
+
+  ############################
+  # PostgresQL component
+  ############################
+  postgresql:
+    image: postgres:11-alpine
+    container_name: postgresql
+    volumes:
+      - ./tye_postgres_init.sql:/docker-entrypoint-initdb.d/tye_postgres_init.sql
+    networks:
+      - coolstore-network
+
+  ############################
+  # ELK component
+  ############################
+  # elk:
+  #   image: sebp/elk:latest
+  #   hostname: elk
+  #   container_name: elk
+  #   networks:
+  #     - coolstore-network
+
+  ############################
+  # Zipkin component
+  ############################
+  # zipkin:
+  #   image: openzipkin/zipkin:latest
+  #   container_name: zipkin
+  #   networks:
+  #     - coolstore-network
+
+  ############################
+  # Dapr placement service
+  ############################
+  placement:
+    image: "daprio/dapr"
+    command: ["./placement", "-port", "50006"]
+    ports:
+      - "50006:50006"
+    networks:
+      - coolstore-network
+
+  ############################
+  # Redis state store
+  ############################
+  # redis:
+  #   image: "redis:alpine"
+  #   networks:
+  #     - coolstore-network
+
+networks:
+  coolstore-network:
