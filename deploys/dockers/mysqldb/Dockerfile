@@ -1,4 +1,4 @@
-FROM mysql:8.0.12
+FROM mysql:8.0.31
 
 # MYSQL_ROOT_PASSWORD must be supplied as an env var
 
